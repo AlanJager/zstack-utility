@@ -59,6 +59,7 @@ class SharedMountPointPrimaryStoragePlugin(kvmagent.KvmAgent):
     CREATE_EMPTY_VOLUME_PATH = "/sharedmountpointprimarystorage/volume/createempty"
     CHECK_BITS_PATH = "/sharedmountpointprimarystorage/bits/check"
     GET_VOLUME_SIZE_PATH = "/sharedmountpointprimarystorage/volume/getsize"
+    GET_CAPACITY_PATH = "/sharedmountpointprimarystorage/getcapacity"
 
     def start(self):
         http_server = kvmagent.get_http_server()
@@ -77,6 +78,7 @@ class SharedMountPointPrimaryStoragePlugin(kvmagent.KvmAgent):
         http_server.register_async_uri(self.CREATE_EMPTY_VOLUME_PATH, self.create_empty_volume)
         http_server.register_async_uri(self.CHECK_BITS_PATH, self.check_bits)
         http_server.register_async_uri(self.GET_VOLUME_SIZE_PATH, self.get_volume_size)
+        http_server.register_async_uri(self.GET_CAPACITY_PATH, self.get_capacity)
 
         self.mount_point = None
         self.imagestore_client = ImageStoreClient()
@@ -86,6 +88,12 @@ class SharedMountPointPrimaryStoragePlugin(kvmagent.KvmAgent):
 
     def _get_disk_capacity(self):
         return linux.get_disk_capacity_by_df(self.mount_point)
+
+    @kvmagent.replyerror
+    def get_capacity(self, req):
+        rsp = AgentRsp()
+        rsp.totalCapacity, rsp.availableCapacity = self._get_disk_capacity()
+        return jsonobject.dumps(rsp)
 
     @kvmagent.replyerror
     def get_volume_size(self, req):
