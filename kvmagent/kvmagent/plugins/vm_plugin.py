@@ -1957,21 +1957,19 @@ class Vm(object):
             raise Exception('cannot detach the cdrom from the VM[uuid:%s]. The device is still present after 30s' %
                             self.uuid)
 
-    def hotplug_mem(self, memory_size):
+    def update_mem(self, memory_size):
+        mem_size = memory_size / 1024
 
-        mem_size = (memory_size - self.get_memory()) / 1024
-        xml = "<memory model='dimm'><target><size unit='KiB'>%d</size><node>0</node></target></memory>" % mem_size
-        logger.debug('hot plug memory: %d KiB' % mem_size)
+        logger.debug('set memory size: %d KiB' % mem_size)
         try:
-            self.domain.attachDeviceFlags(xml, libvirt.VIR_DOMAIN_AFFECT_LIVE | libvirt.VIR_DOMAIN_AFFECT_CONFIG)
+            shell.call("virsh setmem %s %s --config --live" % (self.uuid, mem_size))
         except libvirt.libvirtError as ex:
             err = str(ex)
-            logger.warn('unable to hotplug memory in vm[uuid:%s], %s' % (self.uuid, err))
+            logger.warn('unable to change memory in vm[uuid:%s], %s' % (self.uuid, err))
             raise kvmagent.KvmError(err)
         return
 
-    def hotplug_cpu(self, cpu_num):
-
+    def update_cpu(self, cpu_num):
         logger.debug('set cpus: %d cpus' % cpu_num)
         try:
             self.domain.setVcpusFlags(cpu_num, libvirt.VIR_DOMAIN_AFFECT_LIVE | libvirt.VIR_DOMAIN_AFFECT_CONFIG)
@@ -2918,20 +2916,24 @@ class VmPlugin(kvmagent.KvmAgent):
     def online_change_cpumem(self, req):
         cmd = jsonobject.loads(req[http.REQUEST_BODY])
         rsp = ChangeCpuMemResponse()
+
         try:
             vm = get_vm_by_uuid(cmd.vmUuid)
-            cpu_num = cmd.cpuNum
             memory_size = cmd.memorySize
-            vm.hotplug_mem(memory_size)
-            vm.hotplug_cpu(cpu_num)
-            vm = get_vm_by_uuid(cmd.vmUuid)
-            rsp.cpuNum = vm.get_cpu_num()
+            vm.update_mem(memory_size)
+
+            # vm = get_vm_by_uuid(cmd.vmUuid)
+            # cpu_num = cmd.cpuNum
+            # vm.update_cpu(cpu_num)
+
+            rsp.cpuNum = cmd.cpuNum
             rsp.memorySize = vm.get_memory()
             logger.debug('successfully add cpu and memory on vm[uuid:%s]' % (cmd.vmUuid))
         except kvmagent.KvmError as e:
             logger.warn(linux.get_exception_stacktrace())
             rsp.error = str(e)
             rsp.success = False
+
         return jsonobject.dumps(rsp)
 
     @kvmagent.replyerror
