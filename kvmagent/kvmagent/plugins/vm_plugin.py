@@ -1972,7 +1972,7 @@ class Vm(object):
     def update_cpu(self, cpu_num):
         logger.debug('set cpus: %d cpus' % cpu_num)
         try:
-            self.domain.setVcpusFlags(cpu_num, libvirt.VIR_DOMAIN_AFFECT_LIVE | libvirt.VIR_DOMAIN_AFFECT_CONFIG)
+            shell.call("virsh setvcpus %s %s --live" % (self.uuid, cpu_num))
         except libvirt.libvirtError as ex:
             err = str(ex)
             logger.warn('unable to set cpus in vm[uuid:%s], %s' % (self.uuid, err))
@@ -2202,9 +2202,9 @@ class Vm(object):
                     cpu = e(root, 'cpu')
                 # e(cpu, 'topology', attrib={'sockets': str(cmd.socketNum), 'cores': str(cmd.cpuOnSocket), 'threads': '1'})
                 mem = cmd.memory / 1024
-                e(cpu, 'topology', attrib={'sockets': str(32), 'cores': str(32), 'threads': '1'})
-                numa = e(cpu, 'numa')
-                e(numa, 'cell', attrib={'id': '0', 'cpus': '0-127', 'memory': str(mem), 'unit': 'KiB'})
+                e(cpu, 'topology', attrib={'sockets': str(32), 'cores': str(4), 'threads': '1'})
+                # numa = e(cpu, 'numa')
+                # e(numa, 'cell', attrib={'id': '0', 'cpus': '0-127', 'memory': str(mem), 'unit': 'KiB'})
             else:
                 root = elements['root']
                 # e(root, 'vcpu', '128', {'placement': 'static', 'current': str(cmd.cpuNum)})
@@ -2227,8 +2227,8 @@ class Vm(object):
             root = elements['root']
             mem = cmd.memory / 1024
             if instance_offering_online_change:
-                e(root, 'maxMemory', str(104857600), {'slots': str(16), 'unit': 'KiB'})
-                # e(root,'memory',str(mem),{'unit':'k'})
+                # e(root, 'maxMemory', str(104857600), {'slots': str(16), 'unit': 'KiB'})
+                e(root, 'memory', str(cmd.maxMemory / 1024), {'unit': 'k'})
                 e(root, 'currentMemory', str(mem), {'unit': 'k'})
             else:
                 e(root, 'memory', str(mem), {'unit': 'k'})
@@ -2922,9 +2922,9 @@ class VmPlugin(kvmagent.KvmAgent):
             memory_size = cmd.memorySize
             vm.update_mem(memory_size)
 
-            # vm = get_vm_by_uuid(cmd.vmUuid)
-            # cpu_num = cmd.cpuNum
-            # vm.update_cpu(cpu_num)
+            vm = get_vm_by_uuid(cmd.vmUuid)
+            cpu_num = cmd.cpuNum
+            vm.update_cpu(cpu_num)
 
             rsp.cpuNum = cmd.cpuNum
             rsp.memorySize = vm.get_memory()
