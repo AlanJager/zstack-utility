@@ -2204,7 +2204,7 @@ class Vm(object):
                     cpu = e(root, 'cpu')
                 # e(cpu, 'topology', attrib={'sockets': str(cmd.socketNum), 'cores': str(cmd.cpuOnSocket), 'threads': '1'})
                 mem = cmd.memory / 1024
-                e(cpu, 'topology', attrib={'sockets': str(32), 'cores': str(32), 'threads': '1'})
+                e(cpu, 'topology', attrib={'sockets': str(32), 'cores': str(4), 'threads': '1'})
                 numa = e(cpu, 'numa')
                 e(numa, 'cell', attrib={'id': '0', 'cpus': '0-127', 'memory': str(mem), 'unit': 'KiB'})
             else:
