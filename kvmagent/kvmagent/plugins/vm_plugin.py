@@ -2960,7 +2960,6 @@ class VmPlugin(kvmagent.KvmAgent):
 
         return jsonobject.dumps(rsp)
 
-
     @kvmagent.replyerror
     def online_change_cpumem(self, req):
         cmd = jsonobject.loads(req[http.REQUEST_BODY])
