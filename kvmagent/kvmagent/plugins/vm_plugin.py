@@ -2935,7 +2935,9 @@ class VmPlugin(kvmagent.KvmAgent):
             vm = get_vm_by_uuid(cmd.vmUuid)
             memory_size = cmd.memorySize
             vm.hotplug_mem(memory_size)
+            vm = get_vm_by_uuid(cmd.vmUuid)
             rsp.memorySize = vm.get_memory()
+            logger.debug('successfully increase memory of vm[uuid:%s] to %s Kib' % (cmd.vmUuid, vm.get_memory()))
         except kvmagent.KvmError as e:
             logger.warn(linux.get_exception_stacktrace())
             rsp.error = str(e)
@@ -2952,7 +2954,9 @@ class VmPlugin(kvmagent.KvmAgent):
             vm = get_vm_by_uuid(cmd.vmUuid)
             cpu_num = cmd.cpuNum
             vm.hotplug_cpu(cpu_num)
+            vm = get_vm_by_uuid(cmd.vmUuid)
             rsp.cpuNum = vm.get_cpu_num()
+            logger.debug('successfully increase cpu number of vm[uuid:%s] to %s' % (cmd.vmUuid, vm.get_cpu_num()))
         except kvmagent.KvmError as e:
             logger.warn(linux.get_exception_stacktrace())
             rsp.error = str(e)
